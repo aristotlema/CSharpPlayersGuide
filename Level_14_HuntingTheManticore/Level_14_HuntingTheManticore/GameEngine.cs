@@ -6,30 +6,37 @@ public class GameEngine
 	private int _currentTurn;
 	private int _playerGuess;
 
-	private int _currentManticoreHealth = 10;
-	private int _maxManticoreHealth = 10;
-	private int _manticoreDistance = 10;
-
-
-	private int _currentCityHealth = 15;
-	private int _maxCityHealth = 15;
+	private Player City;
+	private Enemy Manticore;
 
 	public GameEngine()
 	{
 		_currentTurn = 1;
 		_gameActive = true;
+		InitPlayers();
 	}
 
 	public void RunGame()
 	{
+		InitPlayers();
+
 		while (_gameActive)
 		{
 			Console.WriteLine("====================");
 			RoundCounter();
 			InputHandler();
 
-			_currentTurn++;
-		}
+            City.TakeDamage(1);
+
+            _gameActive = CheckWinConditionIsMet();
+            _currentTurn++;
+        }
+	}
+
+	public void InitPlayers()
+	{
+		City = new Player("City", 15);
+		Manticore = new Enemy(10, "Manticore", 10);
 	}
 
 	public void InputHandler()
@@ -43,24 +50,29 @@ public class GameEngine
 		}
 		else
 		{
-			Console.WriteLine("Could not be parsed");
+			Console.WriteLine("Value entered was not a number, try again.");
+			InputHandler();
 		}
 	}
 
 	public void RoundCounter()
 	{
-		Console.WriteLine($"Status: Round {_currentTurn} City: {_currentCityHealth}/{_maxCityHealth} Manticore: {_currentManticoreHealth}/{_maxManticoreHealth}");
-        Console.WriteLine($"The cannon is expected to deal {CalculateDamage()} this round");
-    }
+		Console.WriteLine($"Status: Round {_currentTurn} City: {City.CurrentHealth}/{City.MaxHealth} Manticore: {Manticore.CurrentHealth}/{Manticore.MaxHealth}");
+		Console.WriteLine($"The cannon is expected to deal {CalculateDamage()} damage this round.");
+	}
 
 	public void PlayerGuess(int playerGuess)
 	{
-		if (playerGuess == _manticoreDistance)
+		if (playerGuess == Manticore.Distance)
 		{
 			Console.WriteLine("That round was a DIRECT HIT!");
-			_currentManticoreHealth -= CalculateDamage();
+			Manticore.TakeDamage(CalculateDamage());
 		}
-        else if (playerGuess != _manticoreDistance)
+		else if (playerGuess > Manticore.Distance)
+		{
+			Console.WriteLine("That round OVERSHOT of the target");
+		}
+		else if (playerGuess < Manticore.Distance)
         {
             Console.WriteLine("That round FELL SHORT of the target");
         }
@@ -68,27 +80,26 @@ public class GameEngine
 
 	private int CalculateDamage()
 	{
-		if(_currentTurn != 1)
+		if (_currentTurn != 1)
 		{
-			if( _currentTurn / 3 == 1 || _currentTurn / 5 == 1)
+			if (_currentTurn / 3 == 1 || _currentTurn / 5 == 1)
 				return 3;
 		}
-        return 1;
-    }
-}
-public abstract class Entity
-{
-	private string _name;
-	private int _maxHealth;
-	private int _currentHealth;
-}
+		return 1;
+	}
 
-public class Player : Entity
-{
-
-}
-
-public class Enemy : Entity
-{
-	private int _distance;
+	public bool CheckWinConditionIsMet()
+	{
+		if (Manticore.CurrentHealth <= 0)
+		{
+            Console.WriteLine(Manticore.DeathMessage());
+            return false;
+        }
+		if (City.CurrentHealth <= 0)  
+		{
+			Console.WriteLine(City.DeathMessage());
+			return false;
+		}
+		else return true;
+	}
 }
